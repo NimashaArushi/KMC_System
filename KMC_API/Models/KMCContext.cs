@@ -1,4 +1,5 @@
-﻿using System.Data.Entity;
+﻿using System;
+using System.Data.Entity;
 
 namespace KMC_API.Models
 {
@@ -9,5 +10,8 @@ namespace KMC_API.Models
         }
 
         public DbSet<Event> Events { get; set; }
+        public DbSet<Participant> Participants{ get; set; }
+
+      
     }
 }
