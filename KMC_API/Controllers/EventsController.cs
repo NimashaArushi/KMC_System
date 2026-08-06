@@ -18,79 +18,48 @@ namespace KMC_API.Controllers
             return db.Events.ToList();
         }
   
-        public IHttpActionResult GetEvent(int id)
+        public Event GetEvent(int id)
         {
-            Event @event = db.Events.Find(id);
-            if (@event == null)
-            {
-                return NotFound();
-            }
-            return Ok(@event);
+
+            return db.Events.Find(id);
         }
 
     
-        public IHttpActionResult PostEvent(Event @event)
+        public string PostEvent(Event @event)
         {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+           
 
             db.Events.Add(@event);
             db.SaveChanges();
 
-            return CreatedAtRoute("DefaultApi", new { id = @event.EventID }, @event);
+            return "Events Saved Successfully !!!";
         }
 
-       
-        public IHttpActionResult PutEvent(int id, Event @event)
+
+        public string PutEvent(int id, Event @event)
         {
-            if (!ModelState.IsValid)
+            if (id == @event.EventID)
             {
-                return BadRequest(ModelState);
-            }
-
-            if (id != @event.EventID)
-            {
-                return BadRequest();
-            }
-
-            db.Entry(@event).State = EntityState.Modified;
-
-            try
-            {
+                db.Entry(@event).State = EntityState.Modified;
                 db.SaveChanges();
+                return "Events Updated Successfully !!";
             }
-            catch (DbUpdateConcurrencyException)
-            {
-                if (!EventExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
-            }
-
-            return StatusCode(HttpStatusCode.NoContent);
+            return "Event ID Mismatch";
         }
 
-     
-        public IHttpActionResult DeleteEvent(int id)
+        public string DeleteEvent(int id)
         {
             Event @event = db.Events.Find(id);
-            if (@event == null)
+            if (@event != null)
             {
-                return NotFound();
+                db.Events.Remove(@event);
+                db.SaveChanges();
+                return "Event Deleted Successfully!";
             }
-
-            db.Events.Remove(@event);
-            db.SaveChanges();
-
-            return Ok(@event);
+            return "Event Not Found!";
         }
 
+      
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -99,10 +68,4 @@ namespace KMC_API.Controllers
             }
             base.Dispose(disposing);
         }
-
-        private bool EventExists(int id)
-        {
-            return db.Events.Count(e => e.EventID == id) > 0;
-        }
     }
-}
