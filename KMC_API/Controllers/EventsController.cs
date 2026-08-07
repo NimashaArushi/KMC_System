@@ -12,22 +12,22 @@ namespace KMC_API.Controllers
     {
         private KMCContext db = new KMCContext();
 
-      
+
         public IEnumerable<Event> GetEvents()
         {
             return db.Events.ToList();
         }
-  
+
         public Event GetEvent(int id)
         {
 
             return db.Events.Find(id);
         }
 
-    
+
         public string PostEvent(Event @event)
         {
-           
+
 
             db.Events.Add(@event);
             db.SaveChanges();
@@ -59,7 +59,7 @@ namespace KMC_API.Controllers
             return "Event Not Found!";
         }
 
-      
+
         protected override void Dispose(bool disposing)
         {
             if (disposing)
@@ -69,3 +69,4 @@ namespace KMC_API.Controllers
             base.Dispose(disposing);
         }
     }
+}
