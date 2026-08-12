@@ -1,19 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net.Http;
+using System.Text;
 using System.Web.UI;
-using System.Net.Http.Formatting;
 using System.Web.UI.WebControls;
-using KMC_API.Models;
+using Newtonsoft.Json;
 
 namespace KMC_Client
 {
     public partial class Events : Page
     {
-       
-        private string apiUrl = "https://localhost:44332/api/events/";
+        private readonly string apiBaseUrl = "https://localhost:44332/api/";
 
-        
         protected void Page_Load(object sender, EventArgs e)
         {
             if (!IsPostBack)
@@ -22,18 +20,17 @@ namespace KMC_Client
             }
         }
 
-   
         private void LoadEvents()
         {
-            HttpClient httpClient = new HttpClient();
-            using (HttpClient client = httpClient)
+            using (var client = new HttpClient())
             {
-                HttpResponseMessage response = client.GetAsync(apiUrl).Result;
+                client.BaseAddress = new Uri(apiBaseUrl);
+                HttpResponseMessage response = client.GetAsync("events").Result;
 
                 if (response.IsSuccessStatusCode)
                 {
-                    var events = response.Content.ReadAsAsync<List<Event>>().Result;
-
+                    string json = response.Content.ReadAsStringAsync().Result;
+                    var events = JsonConvert.DeserializeObject<List<EventModel>>(json);
                     gvEvents.DataSource = events;
                     gvEvents.DataBind();
                 }
@@ -42,70 +39,92 @@ namespace KMC_Client
 
         protected void btnSave_Click(object sender, EventArgs e)
         {
-            int eventId = Convert.ToInt32(hfEventID.Value);
-
-            Event evt = new Event
+            var eventObj = new EventModel
             {
-                EventID = eventId,
-                EventName = txtEventName.Text,
-                EventDate = Convert.ToDateTime(txtDate.Text), 
-                Location = txtLocation.Text,
-                Category = txtDescription.Text 
+                EventName = txtEventName.Text.Trim(),
+                EventDate = string.IsNullOrEmpty(txtDate.Text) ? DateTime.Now : Convert.ToDateTime(txtDate.Text),
+                Location = txtLocation.Text.Trim(),
+                Category = txtDescription.Text.Trim()
             };
 
-
-            using (HttpClient client = new HttpClient())
+            using (var client = new HttpClient())
             {
-                if (eventId == 0)
+                client.BaseAddress = new Uri(apiBaseUrl);
+                string json = JsonConvert.SerializeObject(eventObj);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                HttpResponseMessage response;
+
+              
+                if (string.IsNullOrEmpty(hfEventID.Value))
                 {
-                    HttpResponseMessage response = client.PostAsJsonAsync(apiUrl, evt).Result;
-                    lblMessage.Text = "Event Saved Successfully!";
-                    lblMessage.ForeColor = System.Drawing.Color.Green;
+                    response = client.PostAsync("events", content).Result;
                 }
                 else
                 {
-                    HttpResponseMessage response = client.PutAsJsonAsync(apiUrl + eventId, evt).Result;
-                    lblMessage.Text = "Event Updated Successfully!";
+                    int id = Convert.ToInt32(hfEventID.Value);
+                    eventObj.EventID = id;
+                    json = JsonConvert.SerializeObject(eventObj);
+                    content = new StringContent(json, Encoding.UTF8, "application/json");
+                    response = client.PutAsync("events/" + id, content).Result;
+                }
+
+                if (response.IsSuccessStatusCode)
+                {
+                    lblMessage.Text = "Event saved successfully!";
                     lblMessage.ForeColor = System.Drawing.Color.Green;
+                    ClearForm();
+                    LoadEvents();
+                }
+                else
+                {
+                
+                    string errorDetails = response.Content.ReadAsStringAsync().Result;
+                    lblMessage.Text = $"Error: {response.StatusCode} - {response.ReasonPhrase}. Details: {errorDetails}";
+                    lblMessage.ForeColor = System.Drawing.Color.Red;
                 }
             }
-
-            ClearForm();
-            LoadEvents();
         }
 
         protected void gvEvents_RowCommand(object sender, GridViewCommandEventArgs e)
         {
-            int id = Convert.ToInt32(e.CommandArgument);
+            int eventId = Convert.ToInt32(e.CommandArgument);
 
-            if (e.CommandName == "EditRow")
+            if (e.CommandName == "EditEvent")
             {
-                using (HttpClient client = new HttpClient())
+                using (var client = new HttpClient())
                 {
-                    HttpResponseMessage response = client.GetAsync(apiUrl + id).Result;
+                    client.BaseAddress = new Uri(apiBaseUrl);
+                    HttpResponseMessage response = client.GetAsync("events/" + eventId).Result;
+
                     if (response.IsSuccessStatusCode)
                     {
-                        var evt = response.Content.ReadAsAsync<Event>().Result;
+                        string json = response.Content.ReadAsStringAsync().Result;
+                        var ev = JsonConvert.DeserializeObject<EventModel>(json);
 
-                        hfEventID.Value = evt.EventID.ToString();
-                        txtEventName.Text = evt.EventName;
-                        txtDate.Text = evt.EventDate.ToString("yyyy-MM-ddTHH:mm");
-                        txtLocation.Text = evt.Location;
-                        txtDescription.Text = evt.Category;
-
-                        btnSave.Text = "Update Event";
+                        if (ev != null)
+                        {
+                            hfEventID.Value = ev.EventID.ToString();
+                            txtEventName.Text = ev.EventName;
+                            txtDate.Text = ev.EventDate.ToString("yyyy-MM-ddTHH:mm");
+                            txtLocation.Text = ev.Location;
+                            txtDescription.Text = ev.Category;
+                            btnSave.Text = "Update Event";
+                        }
                     }
                 }
             }
-            else if (e.CommandName == "DeleteRow")
+            else if (e.CommandName == "DeleteEvent")
             {
-                using (HttpClient client = new HttpClient())
+                using (var client = new HttpClient())
                 {
-                    HttpResponseMessage response = client.DeleteAsync(apiUrl + id).Result;
+                    client.BaseAddress = new Uri(apiBaseUrl);
+                    HttpResponseMessage response = client.DeleteAsync("events/" + eventId).Result;
+
                     if (response.IsSuccessStatusCode)
                     {
-                        lblMessage.Text = "Event Deleted Successfully!";
-                        lblMessage.ForeColor = System.Drawing.Color.Red;
+                        lblMessage.Text = "Event deleted successfully!";
+                        lblMessage.ForeColor = System.Drawing.Color.Green;
                         LoadEvents();
                     }
                 }
@@ -119,12 +138,22 @@ namespace KMC_Client
 
         private void ClearForm()
         {
-            hfEventID.Value = "0";
+            hfEventID.Value = "";
             txtEventName.Text = "";
             txtDate.Text = "";
             txtLocation.Text = "";
             txtDescription.Text = "";
             btnSave.Text = "Save Event";
+            lblMessage.Text = "";
+        }
+
+        public class EventModel
+        {
+            public int EventID { get; set; }
+            public string EventName { get; set; }
+            public DateTime EventDate { get; set; }
+            public string Location { get; set; }
+            public string Category { get; set; }
         }
     }
 }

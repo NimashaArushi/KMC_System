@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Web;
+using System.Web.Http; // WebApi සදහා මෙය තිබිය යුතුය
 using System.Web.Optimization;
 using System.Web.Routing;
 using System.Web.Security;
@@ -13,8 +14,11 @@ namespace KMC_API
     {
         void Application_Start(object sender, EventArgs e)
         {
-            // Code that runs on application startup
-            RouteConfig.RegisterRoutes(RouteTable.Routes);
+            // Web API Routes පළමුව Register කරන්න
+            System.Web.Http.GlobalConfiguration.Configure(WebApiConfig.Register);
+
+            // ඊට පසු සාමාන්‍ය Routes Register කරන්න
+            KMC_API.RouteConfig.RegisterRoutes(RouteTable.Routes);
             BundleConfig.RegisterBundles(BundleTable.Bundles);
         }
         protected void Application_BeginRequest(object sender, EventArgs e)

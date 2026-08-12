@@ -6,6 +6,7 @@ using System.Web;
 
 namespace KMC_API.Models
 {
+
     public class Event
     {
         [Key]

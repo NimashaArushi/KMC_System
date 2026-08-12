@@ -32,6 +32,26 @@ namespace KMC_API.Controllers
             return "Saved successfully !!";
         }
 
+
+        public string PutParticipant(int id, Participant participant)
+        {
+            Participant existingParticipant = db.Participants.Find(id);
+
+            if (existingParticipant == null)
+            {
+                return "Participant Not Found!";
+            }
+
+            existingParticipant.FullName = participant.FullName;
+            existingParticipant.Email = participant.Email;
+            existingParticipant.Phone = participant.Phone;
+            existingParticipant.EventID = participant.EventID;
+
+            db.SaveChanges();
+
+            return "Updated successfully !!";
+        }
+
         public string DeleteParticipant(int id)
         {
      

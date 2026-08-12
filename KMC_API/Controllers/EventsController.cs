@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Data.Entity;
 using System.Data.Entity.Infrastructure;
 using System.Linq;
@@ -8,57 +9,118 @@ using KMC_API.Models;
 
 namespace KMC_API.Controllers
 {
+    [RoutePrefix("api/events")]
     public class EventsController : ApiController
     {
-        private KMCContext db = new KMCContext();
+        private readonly KMCContext db = new KMCContext();
 
-
-        public IEnumerable<Event> GetEvents()
+        // GET: api/events
+        [HttpGet]
+        [Route("")]
+        public IHttpActionResult GetEvents()
         {
-            return db.Events.ToList();
+            var events = db.Events.ToList();
+            return Ok(events);
         }
 
-        public Event GetEvent(int id)
-        {
-
-            return db.Events.Find(id);
-        }
-
-
-        public string PostEvent(Event @event)
-        {
-
-
-            db.Events.Add(@event);
-            db.SaveChanges();
-
-            return "Events Saved Successfully !!!";
-        }
-
-
-        public string PutEvent(int id, Event @event)
-        {
-            if (id == @event.EventID)
-            {
-                db.Entry(@event).State = EntityState.Modified;
-                db.SaveChanges();
-                return "Events Updated Successfully !!";
-            }
-            return "Event ID Mismatch";
-        }
-
-        public string DeleteEvent(int id)
+        // GET: api/events/5
+        [HttpGet]
+        [Route("{id:int}")]
+        public IHttpActionResult GetEvent(int id)
         {
             Event @event = db.Events.Find(id);
-            if (@event != null)
+            if (@event == null)
             {
-                db.Events.Remove(@event);
-                db.SaveChanges();
-                return "Event Deleted Successfully!";
+                return NotFound();
             }
-            return "Event Not Found!";
+            return Ok(@event);
         }
 
+        // POST: api/events
+        [HttpPost]
+        [Route("")]
+        public IHttpActionResult PostEvent([FromBody] Event @event)
+        {
+            if (@event == null)
+            {
+                return BadRequest("Invalid event data.");
+            }
+
+         
+            if (string.IsNullOrEmpty(@event.ImageURL))
+            {
+                @event.ImageURL = "";
+            }
+
+            try
+            {
+                db.Events.Add(@event);
+                db.SaveChanges();
+                return Ok(new { message = "Event Saved Successfully!" });
+            }
+            catch (Exception ex)
+            {
+                string errorMessage = ex.InnerException?.InnerException?.Message ?? ex.Message;
+                return InternalServerError(new Exception("Database Error: " + errorMessage));
+            }
+        }
+
+        // PUT: api/events/5
+        [HttpPut]
+        [Route("{id:int}")]
+        public IHttpActionResult PutEvent(int id, [FromBody] Event @event)
+        {
+            if (!ModelState.IsValid || @event == null)
+            {
+                return BadRequest(ModelState);
+            }
+
+            if (id != @event.EventID)
+            {
+                return BadRequest("Event ID Mismatch");
+            }
+
+            db.Entry(@event).State = EntityState.Modified;
+
+            try
+            {
+                db.SaveChanges();
+                return Ok(new { message = "Event Updated Successfully !!" });
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!EventExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+        }
+
+        // DELETE: api/events/5
+        [HttpDelete]
+        [Route("{id:int}")]
+        public IHttpActionResult DeleteEvent(int id)
+        {
+            Event @event = db.Events.Find(id);
+            if (@event == null)
+            {
+                return NotFound();
+            }
+
+            db.Events.Remove(@event);
+            db.SaveChanges();
+
+            return Ok(new { message = "Event Deleted Successfully!" });
+        }
+
+        private bool EventExists(int id)
+        {
+            return db.Events.Count(e => e.EventID == id) > 0;
+        }
 
         protected override void Dispose(bool disposing)
         {
