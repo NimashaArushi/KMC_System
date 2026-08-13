@@ -60,22 +60,28 @@
             <hr style="margin-top:30px;" />
 
             <h3>All Events List</h3>
-            <asp:GridView ID="gvEvents" runat="server" AutoGenerateColumns="False" CssClass="grid-view" DataKeyNames="EventID" OnRowCommand="gvEvents_RowCommand">
-                <Columns>
-                    <asp:BoundField DataField="EventID" HeaderText="ID" />
-                    <asp:BoundField DataField="EventName" HeaderText="Event Name" />
-                    <asp:BoundField DataField="EventDate" HeaderText="Date & Time" DataFormatString="{0:yyyy-MM-dd HH:mm}" />
-                    <asp:BoundField DataField="Location" HeaderText="Location" />
+         <asp:GridView ID="gvEvents" runat="server" AutoGenerateColumns="False" CssClass="grid-view" DataKeyNames="EventID" OnRowCommand="gvEvents_RowCommand">
+    <Columns>
+        <asp:BoundField DataField="EventID" HeaderText="ID" />
+        <asp:BoundField DataField="EventName" HeaderText="Event Name" />
+        <asp:BoundField DataField="EventDate" HeaderText="Date & Time" DataFormatString="{0:yyyy-MM-dd HH:mm}" />
+        <asp:BoundField DataField="Location" HeaderText="Location" />
+        <asp:BoundField DataField="Category" HeaderText="Category" />
 
-                    <asp:BoundField DataField="Category" HeaderText="Category" />
-                    <asp:TemplateField HeaderText="Actions">
-                        <ItemTemplate>
-                            <asp:Button ID="btnEdit" runat="server" Text="Edit" CommandName="EditEvent" CommandArgument='<%# Eval("EventID") %>' CssClass="btn btn-edit" />
-                            <asp:Button ID="btnDelete" runat="server" Text="Delete" CommandName="DeleteEvent" CommandArgument='<%# Eval("EventID") %>' CssClass="btn btn-delete" OnClientClick="return confirm('Are you sure?');" />
-                        </ItemTemplate>
-                    </asp:TemplateField>
-                </Columns>
-            </asp:GridView>
+        <asp:TemplateField HeaderText="Image">
+            <ItemTemplate>
+                <asp:Image ID="imgEvent" runat="server" ImageUrl='<%# Eval("ImageURL") %>' Height="60px" Width="80px" Style="object-fit: cover; border-radius: 4px;" AlternateText="No Image" />
+            </ItemTemplate>
+        </asp:TemplateField>
+
+        <asp:TemplateField HeaderText="Actions">
+            <ItemTemplate>
+                <asp:Button ID="btnEdit" runat="server" Text="Edit" CommandName="EditEvent" CommandArgument='<%# Eval("EventID") %>' CssClass="btn btn-edit" />
+                <asp:Button ID="btnDelete" runat="server" Text="Delete" CommandName="DeleteEvent" CommandArgument='<%# Eval("EventID") %>' CssClass="btn btn-delete" OnClientClick="return confirm('Are you sure?');" />
+            </ItemTemplate>
+        </asp:TemplateField>
+    </Columns>
+</asp:GridView>
 
         </div>
     </form>
