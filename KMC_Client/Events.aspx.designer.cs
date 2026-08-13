@@ -41,6 +41,8 @@ namespace KMC_Client
         /// </remarks>
         protected global::System.Web.UI.WebControls.HiddenField hfEventID;
 
+        protected global::System.Web.UI.WebControls.HiddenField hfExistingImageURL;
+
         /// <summary>
         /// txtEventName control.
         /// </summary>
@@ -67,6 +69,15 @@ namespace KMC_Client
         /// To modify move field declaration from designer file to code-behind file.
         /// </remarks>
         protected global::System.Web.UI.WebControls.TextBox txtLocation;
+
+        /// <summary>
+        /// fuEventImage control.
+        /// </summary>
+        /// <remarks>
+        /// Auto-generated field.
+        /// To modify move field declaration from designer file to code-behind file.
+        /// </remarks>
+        protected global::System.Web.UI.WebControls.FileUpload fuEventImage;
 
         /// <summary>
         /// txtDescription control.

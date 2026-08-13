@@ -27,7 +27,7 @@
             <h2>Manage Events (Organizer Admin)</h2>
 
             <asp:Label ID="lblMessage" runat="server" Font-Bold="true"></asp:Label>
-            <asp:HiddenField ID="hfEventID" runat="server" />
+            <asp:HiddenField ID="hfEventID" runat="server" /><asp:HiddenField ID="hfExistingImageURL" runat="server" />
 
             <div class="form-group">
                 <label>Event Name:</label>
@@ -42,6 +42,11 @@
             <div class="form-group">
                 <label>Location:</label>
                 <asp:TextBox ID="txtLocation" runat="server" CssClass="form-control"></asp:TextBox>
+            </div>
+
+            <div class="form-group">
+                <label>Event Image:</label>
+                <asp:FileUpload ID="fuEventImage" runat="server" CssClass="form-control" />
             </div>
 
             <div class="form-group">
@@ -61,6 +66,7 @@
                     <asp:BoundField DataField="EventName" HeaderText="Event Name" />
                     <asp:BoundField DataField="EventDate" HeaderText="Date & Time" DataFormatString="{0:yyyy-MM-dd HH:mm}" />
                     <asp:BoundField DataField="Location" HeaderText="Location" />
+
                     <asp:BoundField DataField="Category" HeaderText="Category" />
                     <asp:TemplateField HeaderText="Actions">
                         <ItemTemplate>

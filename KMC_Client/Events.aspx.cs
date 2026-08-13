@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Net.Http;
 using System.Text;
 using System.Web.UI;
@@ -39,33 +40,60 @@ namespace KMC_Client
 
         protected void btnSave_Click(object sender, EventArgs e)
         {
+            string imageUrl = "";
+
+            // File Upload Logic
+            if (fuEventImage.HasFile)
+            {
+                string fileName = Path.GetFileName(fuEventImage.FileName);
+                string uniqueFileName = Guid.NewGuid().ToString() + "_" + fileName;
+                string folderPath = Server.MapPath("~/Uploads/");
+
+                if (!Directory.Exists(folderPath))
+                {
+                    Directory.CreateDirectory(folderPath);
+                }
+
+                string filePath = Path.Combine(folderPath, uniqueFileName);
+                fuEventImage.SaveAs(filePath);
+
+                imageUrl = "/Uploads/" + uniqueFileName;
+            }
+
             var eventObj = new EventModel
             {
                 EventName = txtEventName.Text.Trim(),
                 EventDate = string.IsNullOrEmpty(txtDate.Text) ? DateTime.Now : Convert.ToDateTime(txtDate.Text),
                 Location = txtLocation.Text.Trim(),
-                Category = txtDescription.Text.Trim()
+                Category = txtDescription.Text.Trim(),
+                ImageURL = imageUrl
             };
 
             using (var client = new HttpClient())
             {
                 client.BaseAddress = new Uri(apiBaseUrl);
-                string json = JsonConvert.SerializeObject(eventObj);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
-
                 HttpResponseMessage response;
 
-              
                 if (string.IsNullOrEmpty(hfEventID.Value))
                 {
+                    string json = JsonConvert.SerializeObject(eventObj);
+                    var content = new StringContent(json, Encoding.UTF8, "application/json");
                     response = client.PostAsync("events", content).Result;
                 }
                 else
                 {
                     int id = Convert.ToInt32(hfEventID.Value);
                     eventObj.EventID = id;
-                    json = JsonConvert.SerializeObject(eventObj);
-                    content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                    // Update කරද්දී අලුතෙන් Image එකක් Upload නොකළොත් පරණ Image URL එක තියාගන්නවා
+                    var existingImageField = (HiddenField)FindControl("hfExistingImageURL");
+                    if (!fuEventImage.HasFile && existingImageField != null && !string.IsNullOrEmpty(existingImageField.Value))
+                    {
+                        eventObj.ImageURL = existingImageField.Value;
+                    }
+
+                    string json = JsonConvert.SerializeObject(eventObj);
+                    var content = new StringContent(json, Encoding.UTF8, "application/json");
                     response = client.PutAsync("events/" + id, content).Result;
                 }
 
@@ -78,7 +106,6 @@ namespace KMC_Client
                 }
                 else
                 {
-                
                     string errorDetails = response.Content.ReadAsStringAsync().Result;
                     lblMessage.Text = $"Error: {response.StatusCode} - {response.ReasonPhrase}. Details: {errorDetails}";
                     lblMessage.ForeColor = System.Drawing.Color.Red;
@@ -109,6 +136,14 @@ namespace KMC_Client
                             txtDate.Text = ev.EventDate.ToString("yyyy-MM-ddTHH:mm");
                             txtLocation.Text = ev.Location;
                             txtDescription.Text = ev.Category;
+
+                            // Edit කරද්දී පරණ Image URL එක HiddenField එකට Save කිරීම
+                            var existingImageField = (HiddenField)FindControl("hfExistingImageURL");
+                            if (existingImageField != null)
+                            {
+                                existingImageField.Value = ev.ImageURL;
+                            }
+
                             btnSave.Text = "Update Event";
                         }
                     }
@@ -145,6 +180,12 @@ namespace KMC_Client
             txtDescription.Text = "";
             btnSave.Text = "Save Event";
             lblMessage.Text = "";
+
+            var existingImageField = (HiddenField)FindControl("hfExistingImageURL");
+            if (existingImageField != null)
+            {
+                existingImageField.Value = "";
+            }
         }
 
         public class EventModel
@@ -154,6 +195,7 @@ namespace KMC_Client
             public DateTime EventDate { get; set; }
             public string Location { get; set; }
             public string Category { get; set; }
+            public string ImageURL { get; set; }
         }
     }
 }

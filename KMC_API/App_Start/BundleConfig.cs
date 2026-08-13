@@ -9,7 +9,7 @@ namespace KMC_API
 {
     public class BundleConfig
     {
-        https://go.microsoft.com/fwlink/?LinkID=303951
+        // https://go.microsoft.com/fwlink/?LinkId=303951
         public static void RegisterBundles(BundleCollection bundles)
         {
             bundles.Add(new ScriptBundle("~/bundles/WebFormsJs").Include(
