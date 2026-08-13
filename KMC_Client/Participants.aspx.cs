@@ -21,7 +21,6 @@ namespace KMC_Client
             }
         }
 
-       
         private void LoadEventsGrid()
         {
             using (var client = new HttpClient())
@@ -37,14 +36,16 @@ namespace KMC_Client
                    
                     ViewState["AllEvents"] = events;
 
-                
+                    // Category DropDown 
                     if (ddlCategoryFilter.Items.Count <= 1)
                     {
                         var categories = events.Select(x => x.Category).Distinct().ToList();
                         foreach (var cat in categories)
                         {
-                            if (!string.IsNullOrEmpty(cat))
+                            if (!string.IsNullOrEmpty(cat) && ddlCategoryFilter.Items.FindByValue(cat) == null)
+                            {
                                 ddlCategoryFilter.Items.Add(new ListItem(cat, cat));
+                            }
                         }
                     }
 
@@ -54,38 +55,40 @@ namespace KMC_Client
             }
         }
 
-       
         protected void btnSearch_Click(object sender, EventArgs e)
         {
             if (ViewState["AllEvents"] != null)
             {
                 var events = (List<EventModel>)ViewState["AllEvents"];
 
-              
+                // 1. Search Name Filter
                 if (!string.IsNullOrEmpty(txtSearchName.Text.Trim()))
                 {
                     events = events.Where(x => x.EventName != null &&
                              x.EventName.IndexOf(txtSearchName.Text.Trim(), StringComparison.OrdinalIgnoreCase) >= 0).ToList();
                 }
 
-                if (!string.IsNullOrEmpty(ddlCategoryFilter.SelectedValue))
+                // 2. Category Filter Default/All Category select 
+                string selectedCategory = ddlCategoryFilter.SelectedValue;
+                if (!string.IsNullOrEmpty(selectedCategory) && selectedCategory != "0" && selectedCategory != "-- All Categories --")
                 {
-                    events = events.Where(x => x.Category == ddlCategoryFilter.SelectedValue).ToList();
+                    events = events.Where(x => x.Category != null &&
+                             x.Category.Equals(selectedCategory, StringComparison.OrdinalIgnoreCase)).ToList();
                 }
 
-          
+                // 3. Location Filter
                 if (!string.IsNullOrEmpty(txtLocationFilter.Text.Trim()))
                 {
                     events = events.Where(x => x.Location != null &&
                              x.Location.IndexOf(txtLocationFilter.Text.Trim(), StringComparison.OrdinalIgnoreCase) >= 0).ToList();
                 }
 
+                // Filter
                 gvEvents.DataSource = events;
                 gvEvents.DataBind();
             }
         }
 
-  
         protected void btnReset_Click(object sender, EventArgs e)
         {
             txtSearchName.Text = "";
@@ -100,7 +103,7 @@ namespace KMC_Client
             {
                 string[] args = e.CommandArgument.ToString().Split('|');
                 string eventId = args[0];
-                string eventName = args[1];
+                string eventName = args.Length > 1 ? args[1] : "";
 
                 hfSelectedEventID.Value = eventId;
                 txtSelectedEvent.Text = eventName + " (ID: " + eventId + ")";
@@ -144,6 +147,7 @@ namespace KMC_Client
                 }
             }
         }
+
         [Serializable]
         public class EventModel
         {
@@ -152,6 +156,7 @@ namespace KMC_Client
             public string Category { get; set; }
             public DateTime EventDate { get; set; }
             public string Location { get; set; }
+            public string ImageURL { get; set; }
         }
     }
 }

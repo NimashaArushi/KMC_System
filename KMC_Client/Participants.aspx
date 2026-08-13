@@ -67,6 +67,13 @@
                     <asp:BoundField DataField="EventDate" HeaderText="Date & Time" DataFormatString="{0:yyyy-MM-dd HH:mm}" />
                     <asp:BoundField DataField="Location" HeaderText="Location" />
                     
+                    <asp:TemplateField HeaderText="Image">
+            <ItemTemplate>
+                <asp:Image ID="imgEvent" runat="server" ImageUrl='<%# Eval("ImageURL") %>' Height="60px" Width="80px" Style="object-fit: cover; border-radius: 4px;" AlternateText="No Image" />
+            </ItemTemplate>
+        </asp:TemplateField>
+
+
                     <asp:TemplateField HeaderText="Action">
                         <ItemTemplate>
                             <asp:Button ID="btnRegisterNow" runat="server" Text="Register Now" CommandName="RegisterEvent" CommandArgument='<%# Eval("EventID") + "|" + Eval("EventName") %>' CssClass="btn btn-register" />
