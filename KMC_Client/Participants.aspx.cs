@@ -61,14 +61,14 @@ namespace KMC_Client
             {
                 var events = (List<EventModel>)ViewState["AllEvents"];
 
-                // 1. Search Name Filter
+                // 1. Search 
                 if (!string.IsNullOrEmpty(txtSearchName.Text.Trim()))
                 {
                     events = events.Where(x => x.EventName != null &&
                              x.EventName.IndexOf(txtSearchName.Text.Trim(), StringComparison.OrdinalIgnoreCase) >= 0).ToList();
                 }
 
-                // 2. Category Filter Default/All Category select 
+                // 2. Category Filter 
                 string selectedCategory = ddlCategoryFilter.SelectedValue;
                 if (!string.IsNullOrEmpty(selectedCategory) && selectedCategory != "0" && selectedCategory != "-- All Categories --")
                 {
@@ -76,7 +76,7 @@ namespace KMC_Client
                              x.Category.Equals(selectedCategory, StringComparison.OrdinalIgnoreCase)).ToList();
                 }
 
-                // 3. Location Filter
+                // 3. Location 
                 if (!string.IsNullOrEmpty(txtLocationFilter.Text.Trim()))
                 {
                     events = events.Where(x => x.Location != null &&

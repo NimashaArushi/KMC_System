@@ -5,33 +5,96 @@
 <head runat="server">
     <title>Public Events & Registration - KMC</title>
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f4f9; margin: 30px; }
-        .container { max-width: 950px; margin: auto; background: white; padding: 25px; border-radius: 8px; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
-        h2, h3 { color: #5B2C6F; text-align: center; }
+body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    body { 
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+    
+    /* Soft Light Purple Tint Overlay + Background Image */
+    background: linear-gradient(135deg, rgba(251, 247, 252, 0.88) 0%, rgba(232, 213, 245, 0.85) 100%), 
+                url('https://t4.ftcdn.net/jpg/03/55/15/09/240_F_355150915_NMxtxVViYCZ3kzzNLSLS2y98GySqcuVq.jpg') no-repeat center center fixed;
+    
+    background-size: cover; 
+    margin: 0; 
+    padding: 35px 15px; 
+    min-height: 100vh;
+}
+    
+    background-size: cover; 
+    margin: 0; 
+    padding: 35px 15px; 
+    min-height: 100vh;
+}
+       .container { 
+    max-width: 920px; 
+    margin: auto; 
+ 
+    background: rgba(255, 255, 255, 0.94); 
+    backdrop-filter: blur(10px);
+    padding: 25px 30px; 
+    border-radius: 16px; 
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3); 
+    border: 1px solid rgba(255, 255, 255, 0.5);
+}
+        h2 { color: #5B2C6F; text-align: center; margin-top: 5px; margin-bottom: 20px; font-weight: 700; }
+        h3 { color: #5B2C6F; margin-top: 15px; margin-bottom: 12px; font-size: 1.2rem; }
         
         /* Search & Filter Bar Styling */
-        .filter-card { background: #F4ECF7; padding: 15px 20px; border-radius: 8px; margin-bottom: 20px; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; }
+        .filter-card { 
+            background: #F4ECF7; 
+            padding: 12px 18px; 
+            border-radius: 8px; 
+            margin-bottom: 20px; 
+            display: flex; 
+            gap: 10px; 
+            align-items: center; 
+            justify-content: space-between; 
+            flex-wrap: wrap; 
+        }
         .filter-group { display: flex; gap: 8px; align-items: center; }
         
         /* Grid styling */
-        .grid-view { width: 100%; border-collapse: collapse; margin-top: 15px; margin-bottom: 30px; }
-        .grid-view th { background-color: #8E44AD; color: white; padding: 10px; }
-        .grid-view td { padding: 10px; border-bottom: 1px solid #ddd; text-align: center; }
+        .grid-view { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-top: 10px; 
+            margin-bottom: 20px; 
+            overflow: hidden; 
+            border-radius: 6px; 
+            border: 1px solid #e1e4e8; 
+        }
+        .grid-view th { background-color: #8E44AD; color: white; padding: 10px; font-size: 0.95rem; }
+        .grid-view td { padding: 8px 10px; border-bottom: 1px solid #eeeeee; text-align: center; font-size: 0.9rem; }
+        .grid-view tr:hover { background-color: #f7f2fb; }
         
         /* Form Card */
-        .card { background: #f9f9f9; padding: 20px; border-radius: 8px; border: 1px solid #ddd; margin-top: 20px; }
-        .form-group { margin-bottom: 15px; }
-        .form-group label { display: block; font-weight: bold; margin-bottom: 5px; }
-        .form-control { padding: 8px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 4px; }
+        .card { 
+            background: #ffffff; 
+            padding: 20px; 
+            border-radius: 10px; 
+            border: 1px solid #e2e8f0; 
+            box-shadow: 0 2px 10px rgba(0,0,0,0.03); 
+            margin-top: 20px; 
+            max-width: 650px; 
+            margin-left: auto; 
+            margin-right: auto; 
+        }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-weight: 600; margin-bottom: 4px; font-size: 0.9rem; color: #333; }
+        .form-control { padding: 8px 12px; box-sizing: border-box; border: 1px solid #cccccc; border-radius: 6px; font-size: 0.9rem; }
         .form-control-full { width: 100%; }
+        .form-control:focus { border-color: #8E44AD; outline: none; }
         
         /* Buttons */
-        .btn { padding: 8px 16px; color: white; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; }
+        .btn { padding: 8px 16px; color: white; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 0.9rem; transition: background 0.2s; }
         .btn-search { background-color: #8E44AD; }
+        .btn-search:hover { background-color: #763a91; }
         .btn-reset { background-color: #7F8C8D; }
-        .btn-register { background-color: #27AE60; }
+        .btn-reset:hover { background-color: #6c7778; }
+        .btn-register { background-color: #27AE60; font-size: 0.85rem; padding: 6px 12px; }
         .btn-register:hover { background-color: #219150; }
-        .btn-submit { background-color: #8E44AD; width: 100%; padding: 10px; }
+        .btn-submit { background-color: #8E44AD; width: 100%; padding: 10px; font-size: 1rem; margin-top: 10px; }
+        .btn-submit:hover { background-color: #763a91; }
     </style>
 </head>
 <body>
@@ -60,6 +123,10 @@
             <!-- 2. View Events Table -->
             <h3>Available Events</h3>
             <asp:GridView ID="gvEvents" runat="server" AutoGenerateColumns="False" CssClass="grid-view" DataKeyNames="EventID" OnRowCommand="gvEvents_RowCommand" EmptyDataText="No events found matching your criteria.">
+                
+                <%-- Alternating Row style to remove pure white dominance --%>
+                <AlternatingRowStyle BackColor="#F9F9FB" />
+                
                 <Columns>
                     <asp:BoundField DataField="EventID" HeaderText="ID" />
                     <asp:BoundField DataField="EventName" HeaderText="Event Name" />
@@ -68,11 +135,10 @@
                     <asp:BoundField DataField="Location" HeaderText="Location" />
                     
                     <asp:TemplateField HeaderText="Image">
-            <ItemTemplate>
-                <asp:Image ID="imgEvent" runat="server" ImageUrl='<%# Eval("ImageURL") %>' Height="60px" Width="80px" Style="object-fit: cover; border-radius: 4px;" AlternateText="No Image" />
-            </ItemTemplate>
-        </asp:TemplateField>
-
+                        <ItemTemplate>
+                            <asp:Image ID="imgEvent" runat="server" ImageUrl='<%# Eval("ImageURL") %>' Height="50px" Width="70px" Style="object-fit: cover; border-radius: 4px;" AlternateText="No Image" />
+                        </ItemTemplate>
+                    </asp:TemplateField>
 
                     <asp:TemplateField HeaderText="Action">
                         <ItemTemplate>
@@ -82,15 +148,14 @@
                 </Columns>
             </asp:GridView>
 
-            <!-- 3. Registration Form (Shows when 'Register Now' is clicked) -->
+            <!-- 3. Registration Form -->
             <asp:Panel ID="pnlRegisterForm" runat="server" Visible="false" CssClass="card">
-                <h3>Register for Event</h3>
+                <h3 style="text-align: center; margin-top: 0;">Register for Event</h3>
                 <asp:Label ID="lblMessage" runat="server" Font-Bold="true"></asp:Label>
-                <br /><br />
 
-                <div class="form-group">
+                <div class="form-group" style="margin-top: 10px;">
                     <label>Selected Event:</label>
-                    <asp:TextBox ID="txtSelectedEvent" runat="server" CssClass="form-control form-control-full" ReadOnly="true" BackColor="#EAEAEA"></asp:TextBox>
+                    <asp:TextBox ID="txtSelectedEvent" runat="server" CssClass="form-control form-control-full" ReadOnly="true" BackColor="#F2F4F7"></asp:TextBox>
                     <asp:HiddenField ID="hfSelectedEventID" runat="server" />
                 </div>
 

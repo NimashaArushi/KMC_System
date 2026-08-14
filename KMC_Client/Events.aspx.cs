@@ -66,8 +66,11 @@ namespace KMC_Client
                 EventDate = string.IsNullOrEmpty(txtDate.Text) ? DateTime.Now : Convert.ToDateTime(txtDate.Text),
                 Location = txtLocation.Text.Trim(),
                 Category = txtDescription.Text.Trim(),
-                ImageURL = imageUrl
-            };
+                ImageURL = imageUrl,
+                OrganizerName=string.IsNullOrWhiteSpace(txtOrganizerName.Text) ? "Kandy Municipal Council"
+                        : txtOrganizerName.Text
+           
+        };
 
             using (var client = new HttpClient())
             {
@@ -85,7 +88,6 @@ namespace KMC_Client
                     int id = Convert.ToInt32(hfEventID.Value);
                     eventObj.EventID = id;
 
-                    // Update කරද්දී අලුතෙන් Image එකක් Upload නොකළොත් පරණ Image URL එක තියාගන්නවා
                     var existingImageField = (HiddenField)FindControl("hfExistingImageURL");
                     if (!fuEventImage.HasFile && existingImageField != null && !string.IsNullOrEmpty(existingImageField.Value))
                     {
@@ -137,7 +139,7 @@ namespace KMC_Client
                             txtLocation.Text = ev.Location;
                             txtDescription.Text = ev.Category;
 
-                            // Edit කරද්දී පරණ Image URL එක HiddenField එකට Save කිරීම
+                        
                             var existingImageField = (HiddenField)FindControl("hfExistingImageURL");
                             if (existingImageField != null)
                             {
@@ -196,6 +198,7 @@ namespace KMC_Client
             public string Location { get; set; }
             public string Category { get; set; }
             public string ImageURL { get; set; }
+            public string OrganizerName { get; set; }
         }
     }
 }

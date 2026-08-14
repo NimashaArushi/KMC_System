@@ -44,6 +44,12 @@
                 <asp:TextBox ID="txtLocation" runat="server" CssClass="form-control"></asp:TextBox>
             </div>
 
+               <div class="form-group">
+                <label>Organizer Name:</label>
+                <asp:TextBox ID="txtOrganizerName" runat="server" CssClass="form-control"></asp:TextBox>
+            </div>
+
+
             <div class="form-group">
                 <label>Event Image:</label>
                 <asp:FileUpload ID="fuEventImage" runat="server" CssClass="form-control" />
@@ -66,6 +72,7 @@
         <asp:BoundField DataField="EventName" HeaderText="Event Name" />
         <asp:BoundField DataField="EventDate" HeaderText="Date & Time" DataFormatString="{0:yyyy-MM-dd HH:mm}" />
         <asp:BoundField DataField="Location" HeaderText="Location" />
+        <asp:BoundField DataField="OrganizerName" HeaderText="Organizer Name" />
         <asp:BoundField DataField="Category" HeaderText="Category" />
 
         <asp:TemplateField HeaderText="Image">

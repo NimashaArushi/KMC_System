@@ -19,6 +19,7 @@ namespace KMC_API.Models
         [Required]
         public DateTime EventDate { get; set; }
         public string Location { get; set; }
+        public string OrganizerName { get; set; }
         public string ImageURL { get; set; }
 
 
