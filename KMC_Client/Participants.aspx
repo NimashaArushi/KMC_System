@@ -9,8 +9,7 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
     body { 
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-    
-    /* Soft Light Purple Tint Overlay + Background Image */
+   
     background: linear-gradient(135deg, rgba(251, 247, 252, 0.88) 0%, rgba(232, 213, 245, 0.85) 100%), 
                 url('https://t4.ftcdn.net/jpg/03/55/15/09/240_F_355150915_NMxtxVViYCZ3kzzNLSLS2y98GySqcuVq.jpg') no-repeat center center fixed;
     
@@ -180,4 +179,20 @@ body {
         </div>
     </form>
 </body>
+    <script type="text/javascript">
+        document.addEventListener('keydown', function (e) {
+            if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+                e.preventDefault();
+                let passCode = prompt("Enter Secret Admin Passcode : ");
+                if (passCode === "1234") {
+                    window.location.href = 'Events.aspx';
+                }
+                else if (passCode !== null) {
+                    alert("Incorrect Passcode! Access Denied.");
+                }
+            }
+
+        });
+
+    </script>
 </html>
