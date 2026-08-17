@@ -24,17 +24,32 @@ namespace KMC_API.Controllers
             return db.Participants.Find(id);
         }
 
-     
-        public string PostParticipant(Participant participant)
+        public string PostParticipant([FromBody] Participant participant)
         {
-            db.Participants.Add(participant);
-            db.SaveChanges();
-            return "Saved successfully !!";
+            if (participant == null || !ModelState.IsValid)
+            {
+                return "Invalid Data Provided!";
+            }
+
+            try
+            {
+                db.Participants.Add(participant);
+                db.SaveChanges();
+                return "Saved successfully !!";
+            }
+            catch (System.Data.Entity.Validation.DbEntityValidationException)
+            {
+                return "Invalid Data Provided!";
+            }
         }
 
-
-        public string PutParticipant(int id, Participant participant)
+        public string PutParticipant(int id, [FromBody] Participant participant)
         {
+            if (participant == null)
+            {
+                return "Invalid Data Provided!";
+            }
+
             Participant existingParticipant = db.Participants.Find(id);
 
             if (existingParticipant == null)
@@ -42,14 +57,20 @@ namespace KMC_API.Controllers
                 return "Participant Not Found!";
             }
 
-            existingParticipant.FullName = participant.FullName;
-            existingParticipant.Email = participant.Email;
-            existingParticipant.Phone = participant.Phone;
-            existingParticipant.EventID = participant.EventID;
+            try
+            {
+                existingParticipant.FullName = participant.FullName;
+                existingParticipant.Email = participant.Email;
+                existingParticipant.Phone = participant.Phone;
+                existingParticipant.EventID = participant.EventID;
 
-            db.SaveChanges();
-
-            return "Updated successfully !!";
+                db.SaveChanges();
+                return "Updated successfully !!";
+            }
+            catch (System.Data.Entity.Validation.DbEntityValidationException)
+            {
+                return "Invalid Data Provided!";
+            }
         }
 
         public string DeleteParticipant(int id)

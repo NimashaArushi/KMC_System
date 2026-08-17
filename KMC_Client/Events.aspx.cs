@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net.Http;
 using System.Text;
 using System.Web.UI;
@@ -12,6 +13,8 @@ namespace KMC_Client
     public partial class Events : Page
     {
         private readonly string apiBaseUrl = "https://localhost:44332/api/";
+
+        public object DataTime { get; private set; }
 
         protected void Page_Load(object sender, EventArgs e)
         {
@@ -34,7 +37,56 @@ namespace KMC_Client
                     var events = JsonConvert.DeserializeObject<List<EventModel>>(json);
                     gvEvents.DataSource = events;
                     gvEvents.DataBind();
+
+                    UpdateDashboardCards(events);
                 }
+            }
+        }
+
+        private void UpdateDashboardCards(List<EventModel> events)
+        {
+
+            if (events != null) {
+                lblTotalEvents.Text = events.Count.ToString();
+                lblTotalParticipants.Text = "0";
+
+                int upcomingCount = events.Count(e => e.EventDate >= DateTime.Now);
+                lblUpcomingEvents.Text = upcomingCount.ToString();
+                GetTotalParticipantsCount();
+            }
+            else
+            {
+                lblTotalEvents.Text = "0";
+                lblTotalParticipants.Text = "0";
+                lblUpcomingEvents.Text = "0";
+            }
+        
+
+
+    }
+
+        private void GetTotalParticipantsCount()
+        {
+
+            try {
+                using (var client = new HttpClient()) {
+                    client.BaseAddress = new Uri(apiBaseUrl);
+                    HttpResponseMessage response = client.GetAsync("participants").Result;
+
+                    if (response.IsSuccessStatusCode) {
+                        string json = response.Content.ReadAsStringAsync().Result;
+                        var registrationsList = JsonConvert.DeserializeObject<List<object>>(json);
+                        lblTotalParticipants.Text = registrationsList != null ? registrationsList.Count.ToString() : "0";
+                    }
+                    else
+                    {
+                        lblTotalParticipants.Text = "0";
+                    }
+                }
+            }
+            catch
+            {
+                lblTotalParticipants.Text = "0";
             }
         }
 
@@ -199,6 +251,7 @@ namespace KMC_Client
             public string Category { get; set; }
             public string ImageURL { get; set; }
             public string OrganizerName { get; set; }
+            public int EventsDate { get; internal set; }
         }
     }
 }

@@ -10,8 +10,7 @@ body {
     body { 
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
    
-    background: linear-gradient(135deg, rgba(251, 247, 252, 0.88) 0%, rgba(232, 213, 245, 0.85) 100%), 
-                url('https://t4.ftcdn.net/jpg/03/55/15/09/240_F_355150915_NMxtxVViYCZ3kzzNLSLS2y98GySqcuVq.jpg') no-repeat center center fixed;
+    background:  url('https://t4.ftcdn.net/jpg/03/55/15/09/240_F_355150915_NMxtxVViYCZ3kzzNLSLS2y98GySqcuVq.jpg') no-repeat center center fixed;
     
     background-size: cover; 
     margin: 0; 
