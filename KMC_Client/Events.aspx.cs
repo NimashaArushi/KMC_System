@@ -92,9 +92,26 @@ namespace KMC_Client
 
         protected void btnSave_Click(object sender, EventArgs e)
         {
-            string imageUrl = "";
+            
+            var existingImageField = (HiddenField)FindControl("hfExistingImageURL");
+            string existingImageUrl = existingImageField != null ? existingImageField.Value : "";
 
-            // File Upload Logic
+       
+            if (string.IsNullOrWhiteSpace(txtEventName.Text) ||
+                string.IsNullOrWhiteSpace(txtDate.Text) ||
+                string.IsNullOrWhiteSpace(txtLocation.Text) ||
+                string.IsNullOrWhiteSpace(txtOrganizerName.Text) ||
+                string.IsNullOrWhiteSpace(txtDescription.Text) ||
+                (!fuEventImage.HasFile && string.IsNullOrEmpty(existingImageUrl)))
+            {
+                lblMessage.Text = "Please fill in all fields (including selecting an Event Image) before saving!";
+                lblMessage.ForeColor = System.Drawing.Color.Red;
+                return; 
+            }
+
+            string imageUrl = existingImageUrl;
+
+            
             if (fuEventImage.HasFile)
             {
                 string fileName = Path.GetFileName(fuEventImage.FileName);
@@ -112,18 +129,18 @@ namespace KMC_Client
                 imageUrl = "/Uploads/" + uniqueFileName;
             }
 
+          
             var eventObj = new EventModel
             {
                 EventName = txtEventName.Text.Trim(),
-                EventDate = string.IsNullOrEmpty(txtDate.Text) ? DateTime.Now : Convert.ToDateTime(txtDate.Text),
+                EventDate = Convert.ToDateTime(txtDate.Text),
                 Location = txtLocation.Text.Trim(),
                 Category = txtDescription.Text.Trim(),
                 ImageURL = imageUrl,
-                OrganizerName=string.IsNullOrWhiteSpace(txtOrganizerName.Text) ? "Kandy Municipal Council"
-                        : txtOrganizerName.Text
-           
-        };
+                OrganizerName = txtOrganizerName.Text.Trim()
+            };
 
+            
             using (var client = new HttpClient())
             {
                 client.BaseAddress = new Uri(apiBaseUrl);
@@ -131,20 +148,16 @@ namespace KMC_Client
 
                 if (string.IsNullOrEmpty(hfEventID.Value))
                 {
+                 
                     string json = JsonConvert.SerializeObject(eventObj);
                     var content = new StringContent(json, Encoding.UTF8, "application/json");
                     response = client.PostAsync("events", content).Result;
                 }
                 else
                 {
+                   
                     int id = Convert.ToInt32(hfEventID.Value);
                     eventObj.EventID = id;
-
-                    var existingImageField = (HiddenField)FindControl("hfExistingImageURL");
-                    if (!fuEventImage.HasFile && existingImageField != null && !string.IsNullOrEmpty(existingImageField.Value))
-                    {
-                        eventObj.ImageURL = existingImageField.Value;
-                    }
 
                     string json = JsonConvert.SerializeObject(eventObj);
                     var content = new StringContent(json, Encoding.UTF8, "application/json");

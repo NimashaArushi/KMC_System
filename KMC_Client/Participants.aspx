@@ -5,35 +5,26 @@
 <head runat="server">
     <title>Public Events & Registration - KMC</title>
     <style>
-body { 
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-    body { 
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-   
-    background:  url('https://t4.ftcdn.net/jpg/03/55/15/09/240_F_355150915_NMxtxVViYCZ3kzzNLSLS2y98GySqcuVq.jpg') no-repeat center center fixed;
-    
-    background-size: cover; 
-    margin: 0; 
-    padding: 35px 15px; 
-    min-height: 100vh;
-}
-    
-    background-size: cover; 
-    margin: 0; 
-    padding: 35px 15px; 
-    min-height: 100vh;
-}
-       .container { 
-    max-width: 920px; 
-    margin: auto; 
- 
-    background: rgba(255, 255, 255, 0.94); 
-    backdrop-filter: blur(10px);
-    padding: 25px 30px; 
-    border-radius: 16px; 
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.3); 
-    border: 1px solid rgba(255, 255, 255, 0.5);
-}
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+         background :url('https://images.unsplash.com/photo-1492684223066-81342ee5ff30?auto=format&fit=crop&w=1920&q=80') no-repeat center center fixed;
+            background-attachment: fixed;
+            margin: 0; 
+            padding: 35px 15px; 
+            min-height: 100vh;
+        }
+
+        .container { 
+            max-width: 920px; 
+            margin: auto; 
+            background: rgba(255, 255, 255, 0.95); 
+            backdrop-filter: blur(10px);
+            padding: 25px 30px; 
+            border-radius: 16px; 
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.15); 
+            border: 1px solid rgba(255, 255, 255, 0.5);
+        }
+
         h2 { color: #5B2C6F; text-align: center; margin-top: 5px; margin-bottom: 20px; font-weight: 700; }
         h3 { color: #5B2C6F; margin-top: 15px; margin-bottom: 12px; font-size: 1.2rem; }
         
@@ -93,6 +84,24 @@ body {
         .btn-register:hover { background-color: #219150; }
         .btn-submit { background-color: #8E44AD; width: 100%; padding: 10px; font-size: 1rem; margin-top: 10px; }
         .btn-submit:hover { background-color: #763a91; }
+
+
+
+      .status-badge {
+            display: inline-block;
+            padding: 3px 8px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            border-radius: 12px;
+            color: #ffffff;
+            margin-left: 6px;
+            text-transform: uppercase;
+        }
+        .badge-upcoming { background-color: #27AE60; } 
+        .badge-today { background-color: #F39C12; }   
+        .badge-past { background-color: #E74C3C; }     
+
+
     </style>
 </head>
 <body>
@@ -120,9 +129,11 @@ body {
 
             <!-- 2. View Events Table -->
             <h3>Available Events</h3>
+            <p id="eventCounter" style="font-weight: 600; color: #5B2C6F; margin-top: -5px; margin-bottom: 10px; font-size: 0.95rem;">
+                Showing 0 of 0 events
+            </p>
             <asp:GridView ID="gvEvents" runat="server" AutoGenerateColumns="False" CssClass="grid-view" DataKeyNames="EventID" OnRowCommand="gvEvents_RowCommand" EmptyDataText="No events found matching your criteria.">
                 
-                <%-- Alternating Row style to remove pure white dominance --%>
                 <AlternatingRowStyle BackColor="#F9F9FB" />
                 
                 <Columns>
@@ -177,7 +188,7 @@ body {
 
         </div>
     </form>
-</body>
+
     <script type="text/javascript">
         document.addEventListener('keydown', function (e) {
             if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
@@ -190,8 +201,64 @@ body {
                     alert("Incorrect Passcode! Access Denied.");
                 }
             }
-
         });
 
-    </script>
-</html>
+        function updateEventCounter() {
+            var grid = document.getElementById('<%= gvEvents.ClientID %>');
+            if (grid) {
+                var rows = grid.getElementsByTagName('tr');
+          
+                var totalRows = rows.length > 0 ? rows.length - 1 : 0;
+
+                var counter = document.getElementById('eventCounter');
+                if (counter && totalRows > 0) {
+                    counter.innerText = "Showing " + totalRows + " event(s)";
+                } else if (counter) {
+                    counter.innerText = "No events available";
+                }
+            }
+        }
+
+        function applyEventsStatusBadges() {
+            var grid = document.getElementById('<%= gvEvents.ClientID %>');
+            if (!grid) return;
+
+            var rows = grid.getElementsByTagName('tr');
+            var today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            for (var i = 1; i < rows.length; i++) { 
+                var dateCell = rows[i].cells[3];   
+                if (dateCell) {
+                    var dateText = dateCell.innerText.trim();
+                    if (dateText) {
+                        var eventDate = new Date(dateText.replace(/-/g, '/'));
+                        var eventDateOnly = new Date(eventDate.getFullYear(), eventDate.getMonth(), eventDate.getDate());
+
+                        var badge = document.createElement('span');
+                        badge.className = 'status-badge';
+
+                        if (eventDateOnly > today) {
+                            badge.innerText = 'Upcoming'; 
+                            badge.classList.add('badge-upcoming');
+                        }
+                        else if (eventDateOnly.getTime() === today.getTime()) {
+                            badge.innerText = 'Today';
+                            badge.classList.add('badge-today'); 
+                        }
+                        else {
+                            badge.innerText = 'Past';
+                            badge.classList.add('badge-past');
+                        }
+                        dateCell.appendChild(badge);
+                    }
+                }
+            }
+        }
+
+
+        window.addEventListener('DOMContentLoaded', function () {
+            updateEventCounter();
+            applyEventsStatusBadges();
+        });
+</script>

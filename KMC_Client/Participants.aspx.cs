@@ -115,36 +115,74 @@ namespace KMC_Client
 
         protected void btnSubmitRegistration_Click(object sender, EventArgs e)
         {
-            var participantData = new
+            string fullName = txtFullName.Text.Trim();
+            string email = txtEmail.Text.Trim();
+            string phone = txtPhone.Text.Trim();
+
+            // 1. Required Fields Check
+            if (string.IsNullOrEmpty(fullName) || string.IsNullOrEmpty(email) || string.IsNullOrEmpty(phone))
             {
-                FullName = txtFullName.Text.Trim(),
-                Email = txtEmail.Text.Trim(),
-                Phone = txtPhone.Text.Trim(),
-                EventID = Convert.ToInt32(hfSelectedEventID.Value)
-            };
+                lblMessage.Text = "All fields are required!";
+                lblMessage.ForeColor = System.Drawing.Color.Red;
+                return;
+            }
 
-            using (var client = new HttpClient())
+            // 2. Email Pattern Check
+            string emailPattern = @"^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$";
+            if (!System.Text.RegularExpressions.Regex.IsMatch(email, emailPattern))
             {
-                client.BaseAddress = new Uri(apiBaseUrl);
-                string json = JsonConvert.SerializeObject(participantData);
-                var content = new StringContent(json, Encoding.UTF8, "application/json");
+                lblMessage.Text = "Please enter a valid email address.";
+                lblMessage.ForeColor = System.Drawing.Color.Red;
+                return;
+            }
 
-                HttpResponseMessage response = client.PostAsync("participants", content).Result;
+            string phonePattern = @"^[0-9]{10}$";
+            if (!System.Text.RegularExpressions.Regex.IsMatch(phone, phonePattern))
+            {
+                lblMessage.Text = "Phone number must be exactly 10 digits.";
+                lblMessage.ForeColor = System.Drawing.Color.Red;
+                return;
+            }
 
-                if (response.IsSuccessStatusCode)
+           
+            try
+            {
+                using (var client = new HttpClient())
                 {
-                    lblMessage.Text = "Registration Successful!";
-                    lblMessage.ForeColor = System.Drawing.Color.Green;
+                    client.BaseAddress = new Uri(apiBaseUrl);
 
-                    txtFullName.Text = "";
-                    txtEmail.Text = "";
-                    txtPhone.Text = "";
+                    var registrationData = new
+                    {
+                        EventID = Convert.ToInt32(hfSelectedEventID.Value),
+                        FullName = fullName,
+                        Email = email,
+                        Phone = phone
+                    };
+
+                    var jsonContent = new StringContent(Newtonsoft.Json.JsonConvert.SerializeObject(registrationData), System.Text.Encoding.UTF8, "application/json");
+                    HttpResponseMessage response = client.PostAsync("participants", jsonContent).Result;
+
+                    if (response.IsSuccessStatusCode)
+                    {
+                        lblMessage.Text = "Registration Successful!";
+                        lblMessage.ForeColor = System.Drawing.Color.Green;
+
+                     
+                        txtFullName.Text = "";
+                        txtEmail.Text = "";
+                        txtPhone.Text = "";
+                    }
+                    else
+                    {
+                        lblMessage.Text = "Registration Failed. Please try again.";
+                        lblMessage.ForeColor = System.Drawing.Color.Red;
+                    }
                 }
-                else
-                {
-                    lblMessage.Text = "Error in Registration. Please try again.";
-                    lblMessage.ForeColor = System.Drawing.Color.Red;
-                }
+            }
+            catch (Exception ex)
+            {
+                lblMessage.Text = "Error: " + ex.Message;
+                lblMessage.ForeColor = System.Drawing.Color.Red;
             }
         }
 
