@@ -1,5 +1,4 @@
-﻿<%@ Page Language="C#" AutoEventWireup="true" CodeBehind="Events.aspx.cs" Inherits="KMC_Client.Events" %>
-
+﻿<%@ Page Title="Events" Language="C#" AutoEventWireup="true" CodeBehind="Events.aspx.cs" Inherits="KMC_Client.Events" Async="true" %>
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml">
 <head runat="server">
@@ -164,13 +163,33 @@
         .grid-view th { background-color: #4A154B; color: white; padding: 14px; font-weight: 700; text-align: center; }
         .grid-view td { padding: 12px; border: 1px solid #E2E8F0; text-align: center; color: #1E293B; font-weight: 500; vertical-align: middle; }
         .grid-view tr:nth-child(even) { background-color: #F8FAFC; }
+
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        .modal-box {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .modal-header { font-size: 18px; font-weight: 700; margin-bottom: 8px; color: #4A154B; }
+        .modal-subtext { font-size: 13px; color: #64748B; margin-bottom: 20px; }
+        .modal-footer { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
     </style>
 </head>
 <body>
     <form id="form1" runat="server">
         <div class="container">
             
-            <h2 class="header-title">Manage Events 🤩  (Organizer Admin)</h2>
+            <h2 class="header-title">Manage Events 🤩 (Organizer Admin)</h2>
             
             <div class="card-container">
                 <div class="card card-events">
@@ -193,6 +212,8 @@
 
             <asp:HiddenField ID="hfEventID" runat="server" />
             <asp:HiddenField ID="hfExistingImageURL" runat="server" />
+            <asp:HiddenField ID="hfOrganizerEmail" runat="server" />
+            <asp:HiddenField ID="hfOrganizerPassword" runat="server" />
 
             <div class="form-group">
                 <label>Event Name:</label>
@@ -224,7 +245,7 @@
                 <asp:TextBox ID="txtDescription" runat="server" TextMode="MultiLine" Rows="3" CssClass="form-control"></asp:TextBox>
             </div>
 
-            <asp:Button ID="btnSave" runat="server" Text="Save Event" CssClass="btn btn-save" OnClick="btnSave_Click" />
+            <asp:Button ID="btnSave" runat="server" Text="Save Event" CssClass="btn btn-save" OnClick="btnSave_Click" OnClientClick="return handleSaveClick();" />
             <asp:Button ID="btnClear" runat="server" Text="Clear" CssClass="btn btn-clear" OnClick="btnClear_Click" />
 
             <hr style="margin-top:35px; border: 0; border-top: 1px solid #E2E8F0;" />
@@ -235,7 +256,7 @@
                 <Columns>
                     <asp:BoundField DataField="EventID" HeaderText="ID" />
                     <asp:BoundField DataField="EventName" HeaderText="Event Name" />
-                    <asp:BoundField DataField="EventDate" HeaderText="Date & Time" DataFormatString="{0:yyyy-MM-dd HH:mm}" />
+                    <asp:BoundField DataField="EventDate" HeaderText="Date & Time" DataFormatString="{0:yyyy-MM-dd HH:mm}" NullDisplayText="N/A" />
                     <asp:BoundField DataField="Location" HeaderText="Location" />
                     <asp:BoundField DataField="OrganizerName" HeaderText="Organizer Name" />
                     <asp:BoundField DataField="Category" HeaderText="Category" />
@@ -257,7 +278,78 @@
                 </Columns>
             </asp:GridView>
 
+            <!-- Organizer Verification Modal -->
+            <div id="verifyModal" class="modal-overlay">
+                <div class="modal-box">
+                    <div class="modal-header">Organizer Verification 🔒</div>
+                    <div class="modal-subtext">Please enter your Organizer Email and Password to confirm these changes.</div>
+                    
+                    <div class="form-group">
+                        <label>Organizer Email:</label>
+                        <input type="email" id="modalEmail" class="form-control" placeholder="Enter Email" />
+                    </div>
+
+                    <div class="form-group">
+                        <label>Password:</label>
+                        <input type="password" id="modalPassword" class="form-control" placeholder="Enter Password" />
+                    </div>
+
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-clear" onclick="closeModal()">Cancel</button>
+                        <button type="button" class="btn btn-save" onclick="confirmUpdate()">Confirm & Save</button>
+                    </div>
+                </div>
+            </div>
         </div>
     </form>
+
+    <script type="text/javascript">
+        let isVerified = false;
+
+        function handleSaveClick() {
+            var eventId = document.getElementById('<%= hfEventID.ClientID %>').value;
+
+            // Allow direct save if creating a new event
+            if (!eventId || eventId === "0" || eventId === "") {
+                return true;
+            }
+
+            // Stop submission for updates until verified via Modal
+            if (!isVerified) {
+                openModal();
+                return false;
+            }
+
+            return true;
+        }
+
+        function openModal() {
+            document.getElementById('verifyModal').style.display = 'flex';
+        }
+
+        function closeModal() {
+            document.getElementById('verifyModal').style.display = 'none';
+            document.getElementById('modalEmail').value = '';
+            document.getElementById('modalPassword').value = '';
+        }
+
+        function confirmUpdate() {
+            var email = document.getElementById('modalEmail').value;
+            var password = document.getElementById('modalPassword').value;
+
+            if (!email || !password) {
+                alert("Please enter both Email and Password!");
+                return;
+            }
+
+            document.getElementById('<%= hfOrganizerEmail.ClientID %>').value = email;
+            document.getElementById('<%= hfOrganizerPassword.ClientID %>').value = password;
+
+            isVerified = true;
+            closeModal();
+            
+            document.getElementById('<%= btnSave.ClientID %>').click();
+        }
+    </script>
 </body>
 </html>

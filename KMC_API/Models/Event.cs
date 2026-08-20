@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 using System.Linq;
 using System.Web;
 
@@ -22,6 +23,9 @@ namespace KMC_API.Models
         public string OrganizerName { get; set; }
         public string ImageURL { get; set; }
 
+        public int? OrganizerID { get; set; }
 
+        [ForeignKey("OrganizerID")]
+        public virtual Organizer Organizer { get; set; }
     }
 }

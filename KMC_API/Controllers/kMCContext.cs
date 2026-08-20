@@ -1,8 +1,15 @@
-﻿namespace KMC_API.Controllers
+﻿using System.Data.Entity;
+
+namespace KMC_API.Models
 {
-    internal class kMCContext
+    public class KMCContext : DbContext
     {
-        public object Events { get; internal set; }
-        public object Participants { get; internal set; }
+        public KMCContext() : base(@"Data Source=.\SQLEXPRESS;Initial Catalog=KMC_DB;Integrated Security=True;MultipleActiveResultSets=True;")
+        {
+        }
+
+        public DbSet<Event> Events { get; set; }
+        public DbSet<Participant> Participants { get; set; }
+        public DbSet<Organizer> Organizers { get; set; }
     }
 }

@@ -46,7 +46,6 @@ namespace KMC_API.Controllers
                 return BadRequest("Invalid event data.");
             }
 
-         
             if (string.IsNullOrEmpty(@event.ImageURL))
             {
                 @event.ImageURL = "";
@@ -56,7 +55,7 @@ namespace KMC_API.Controllers
             {
                 db.Events.Add(@event);
                 db.SaveChanges();
-                return Ok(new { message = "Event Saved Successfully!" });
+                return Ok(new { message = "Event saved successfully! 🎉" });
             }
             catch (Exception ex)
             {
@@ -68,35 +67,56 @@ namespace KMC_API.Controllers
         // PUT: api/events/5
         [HttpPut]
         [Route("{id:int}")]
-        public IHttpActionResult PutEvent(int id, [FromBody] Event @event)
+        public IHttpActionResult PutEvent(int id, [FromBody] EventUpdateRequest request)
         {
-            if (!ModelState.IsValid || @event == null)
+            if (request == null || request.Event == null)
             {
-                return BadRequest(ModelState);
+                return BadRequest("Invalid request payload.");
             }
 
-            if (id != @event.EventID)
+            if (id != request.Event.EventID)
             {
-                return BadRequest("Event ID Mismatch");
+                return BadRequest("Event ID Mismatch.");
             }
 
-            db.Entry(@event).State = EntityState.Modified;
+            // 1. Organizer Credentials Check
+            var organizer = db.Organizers.FirstOrDefault(o => o.Email == request.Email && o.Password == request.Password);
+
+            if (organizer == null)
+            {
+                return Content(HttpStatusCode.Unauthorized, new { message = "Invalid Organizer Credentials! Email or Password incorrect. ❌" });
+            }
+
+            // 2. DB Event Search
+            var existingEvent = db.Events.Find(id);
+            if (existingEvent == null)
+            {
+                return NotFound();
+            }
+
+            // 3. Ownership Verification
+            if (existingEvent.OrganizerID != organizer.OrganizerID)
+            {
+                return Content(HttpStatusCode.Forbidden, new { message = "Unauthorized! You are not the organizer who created this event." });
+            }
+
+            // 4. Update Event Values
+            existingEvent.EventName = request.Event.EventName;
+            existingEvent.Category = request.Event.Category;
+            existingEvent.EventDate = request.Event.EventDate;
+            existingEvent.Location = request.Event.Location;
+            existingEvent.ImageURL = request.Event.ImageURL;
+            existingEvent.OrganizerName = request.Event.OrganizerName;
 
             try
             {
                 db.SaveChanges();
-                return Ok(new { message = "Event Updated Successfully !!" });
+                return Ok(new { message = "Event updated successfully! ✏️" });
             }
-            catch (DbUpdateConcurrencyException)
+            catch (Exception ex)
             {
-                if (!EventExists(id))
-                {
-                    return NotFound();
-                }
-                else
-                {
-                    throw;
-                }
+                string errorMessage = ex.InnerException?.InnerException?.Message ?? ex.Message;
+                return InternalServerError(new Exception("Database Error: " + errorMessage));
             }
         }
 
@@ -114,7 +134,7 @@ namespace KMC_API.Controllers
             db.Events.Remove(@event);
             db.SaveChanges();
 
-            return Ok(new { message = "Event Deleted Successfully!" });
+            return Ok(new { message = "Event deleted successfully! 🗑️" });
         }
 
         private bool EventExists(int id)
@@ -130,5 +150,12 @@ namespace KMC_API.Controllers
             }
             base.Dispose(disposing);
         }
+    }
+
+    public class EventUpdateRequest
+    {
+        public Event Event { get; set; }
+        public string Email { get; set; }
+        public string Password { get; set; }
     }
 }

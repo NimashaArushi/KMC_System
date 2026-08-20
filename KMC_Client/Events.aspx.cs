@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Net.Http;
 using System.Text;
+using System.Threading.Tasks;
 using System.Web.UI;
 using System.Web.UI.WebControls;
 using Newtonsoft.Json;
@@ -12,203 +13,200 @@ namespace KMC_Client
 {
     public partial class Events : Page
     {
-        private readonly string apiBaseUrl = "https://localhost:44332/api/";
-
-        public object DataTime { get; private set; }
-
-        protected void Page_Load(object sender, EventArgs e)
+        private readonly string apiBaseUrl = "https://localhost:44332/api/Events";
+        protected async void Page_Load(object sender, EventArgs e)
         {
+           
+            System.Net.ServicePointManager.ServerCertificateValidationCallback =
+                delegate { return true; };
+
             if (!IsPostBack)
             {
-                LoadEvents();
+                await LoadEventsAsync();
             }
         }
-
-        private void LoadEvents()
+        private async Task LoadEventsAsync()
         {
-            using (var client = new HttpClient())
+            try
             {
-                client.BaseAddress = new Uri(apiBaseUrl);
-                HttpResponseMessage response = client.GetAsync("events").Result;
-
-                if (response.IsSuccessStatusCode)
+                using (HttpClient client = new HttpClient())
                 {
-                    string json = response.Content.ReadAsStringAsync().Result;
-                    var events = JsonConvert.DeserializeObject<List<EventModel>>(json);
-                    gvEvents.DataSource = events;
-                    gvEvents.DataBind();
+                    HttpResponseMessage response = await client.GetAsync(apiBaseUrl);
 
-                    UpdateDashboardCards(events);
-                }
-            }
-        }
+                    if (response.IsSuccessStatusCode)
+                    {
+                        string jsonString = await response.Content.ReadAsStringAsync();
 
-        private void UpdateDashboardCards(List<EventModel> events)
-        {
+                        var settings = new JsonSerializerSettings
+                        {
+                            NullValueHandling = NullValueHandling.Ignore,
+                            MissingMemberHandling = MissingMemberHandling.Ignore
+                        };
 
-            if (events != null) {
-                lblTotalEvents.Text = events.Count.ToString();
-                lblTotalParticipants.Text = "0";
+                        List<EventViewModel> events = JsonConvert.DeserializeObject<List<EventViewModel>>(jsonString, settings)
+                                                     ?? new List<EventViewModel>();
 
-                int upcomingCount = events.Count(e => e.EventDate >= DateTime.Now);
-                lblUpcomingEvents.Text = upcomingCount.ToString();
-                GetTotalParticipantsCount();
-            }
-            else
-            {
-                lblTotalEvents.Text = "0";
-                lblTotalParticipants.Text = "0";
-                lblUpcomingEvents.Text = "0";
-            }
-        
+                        gvEvents.DataSource = events;
+                        gvEvents.DataBind();
 
+                        lblTotalEvents.Text = events.Count.ToString();
 
-    }
-
-        private void GetTotalParticipantsCount()
-        {
-
-            try {
-                using (var client = new HttpClient()) {
-                    client.BaseAddress = new Uri(apiBaseUrl);
-                    HttpResponseMessage response = client.GetAsync("participants").Result;
-
-                    if (response.IsSuccessStatusCode) {
-                        string json = response.Content.ReadAsStringAsync().Result;
-                        var registrationsList = JsonConvert.DeserializeObject<List<object>>(json);
-                        lblTotalParticipants.Text = registrationsList != null ? registrationsList.Count.ToString() : "0";
+                        int upcomingCount = events.Count(x => x.EventDate.HasValue && x.EventDate.Value >= DateTime.Now);
+                        lblUpcomingEvents.Text = upcomingCount.ToString();
                     }
                     else
                     {
-                        lblTotalParticipants.Text = "0";
+                        ShowAlert("Failed to load events from API.", false);
                     }
                 }
             }
-            catch
+            catch (Exception ex)
             {
-                lblTotalParticipants.Text = "0";
+                ShowAlert("Error loading events: " + ex.Message, false);
             }
         }
 
-        protected void btnSave_Click(object sender, EventArgs e)
+        protected async void btnSave_Click(object sender, EventArgs e)
         {
-            
-            var existingImageField = (HiddenField)FindControl("hfExistingImageURL");
-            string existingImageUrl = existingImageField != null ? existingImageField.Value : "";
+            await SaveEventAsync();
+        }
 
-       
-            if (string.IsNullOrWhiteSpace(txtEventName.Text) ||
-                string.IsNullOrWhiteSpace(txtDate.Text) ||
-                string.IsNullOrWhiteSpace(txtLocation.Text) ||
-                string.IsNullOrWhiteSpace(txtOrganizerName.Text) ||
-                string.IsNullOrWhiteSpace(txtDescription.Text) ||
-                (!fuEventImage.HasFile && string.IsNullOrEmpty(existingImageUrl)))
+        private async Task SaveEventAsync()
+        {
+            try
             {
-                lblMessage.Text = "Please fill in all fields (including selecting an Event Image) before saving!";
-                lblMessage.ForeColor = System.Drawing.Color.Red;
-                return; 
+                // Validate Date Input safely
+                if (string.IsNullOrWhiteSpace(txtDate.Text) || !DateTime.TryParse(txtDate.Text, out DateTime parsedDate))
+                {
+                    ShowAlert("Please select a valid Event Date & Time! 📅", false);
+                    return;
+                }
+
+                string eventId = hfEventID.Value;
+                string imageUrl = hfExistingImageURL.Value;
+
+                if (fuEventImage.HasFile)
+                {
+                    string fileName = Path.GetFileName(fuEventImage.FileName);
+                    string folderPath = Server.MapPath("~/Images/");
+
+                    if (!Directory.Exists(folderPath))
+                    {
+                        Directory.CreateDirectory(folderPath);
+                    }
+
+                    string fullPath = Path.Combine(folderPath, fileName);
+                    fuEventImage.SaveAs(fullPath);
+                    imageUrl = "~/Images/" + fileName;
+                }
+
+                var eventData = new EventViewModel
+                {
+                    EventID = string.IsNullOrEmpty(eventId) ? 0 : Convert.ToInt32(eventId),
+                    EventName = txtEventName.Text.Trim(),
+                    EventDate = parsedDate,
+                    Location = txtLocation.Text.Trim(),
+                    OrganizerName = txtOrganizerName.Text.Trim(),
+                    Category = txtDescription.Text.Trim(),
+                    ImageURL = imageUrl
+                };
+
+                using (HttpClient client = new HttpClient())
+                {
+                    if (string.IsNullOrEmpty(eventId) || eventId == "0")
+                    {
+                        // POST (Create)
+                        string jsonPayload = JsonConvert.SerializeObject(eventData);
+                        HttpContent content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+                        HttpResponseMessage response = await client.PostAsync(apiBaseUrl, content);
+                        if (response.IsSuccessStatusCode)
+                        {
+                            ShowAlert("Event created successfully! 🎉", true);
+                            ClearForm();
+                            await LoadEventsAsync();
+                        }
+                        else
+                        {
+                            ShowAlert("Failed to create event.", false);
+                        }
+                    }
+                    else
+                    {
+                        // PUT (Update)
+                        var updatePayload = new
+                        {
+                            Event = eventData,
+                            Email = hfOrganizerEmail.Value.Trim(),
+                            Password = hfOrganizerPassword.Value.Trim()
+                        };
+
+                        string jsonPayload = JsonConvert.SerializeObject(updatePayload);
+                        HttpContent content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+                        HttpResponseMessage response = await client.PutAsync($"{apiBaseUrl}/{eventId}", content);
+
+                        if (response.IsSuccessStatusCode)
+                        {
+                            ShowAlert("Event updated successfully! ✏️", true);
+                            ClearForm();
+                            await LoadEventsAsync();
+                        }
+                        else if (response.StatusCode == System.Net.HttpStatusCode.Unauthorized || response.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                        {
+                            ShowAlert("Verification failed! Invalid organizer email or password. ❌", false);
+                        }
+                        else
+                        {
+                            ShowAlert("Failed to update event.", false);
+                        }
+                    }
+                }
             }
-
-            string imageUrl = existingImageUrl;
-
-            
-            if (fuEventImage.HasFile)
+            catch (Exception ex)
             {
-                string fileName = Path.GetFileName(fuEventImage.FileName);
-                string uniqueFileName = Guid.NewGuid().ToString() + "_" + fileName;
-                string folderPath = Server.MapPath("~/Uploads/");
-
-                if (!Directory.Exists(folderPath))
-                {
-                    Directory.CreateDirectory(folderPath);
-                }
-
-                string filePath = Path.Combine(folderPath, uniqueFileName);
-                fuEventImage.SaveAs(filePath);
-
-                imageUrl = "/Uploads/" + uniqueFileName;
-            }
-
-          
-            var eventObj = new EventModel
-            {
-                EventName = txtEventName.Text.Trim(),
-                EventDate = Convert.ToDateTime(txtDate.Text),
-                Location = txtLocation.Text.Trim(),
-                Category = txtDescription.Text.Trim(),
-                ImageURL = imageUrl,
-                OrganizerName = txtOrganizerName.Text.Trim()
-            };
-
-            
-            using (var client = new HttpClient())
-            {
-                client.BaseAddress = new Uri(apiBaseUrl);
-                HttpResponseMessage response;
-
-                if (string.IsNullOrEmpty(hfEventID.Value))
-                {
-                 
-                    string json = JsonConvert.SerializeObject(eventObj);
-                    var content = new StringContent(json, Encoding.UTF8, "application/json");
-                    response = client.PostAsync("events", content).Result;
-                }
-                else
-                {
-                   
-                    int id = Convert.ToInt32(hfEventID.Value);
-                    eventObj.EventID = id;
-
-                    string json = JsonConvert.SerializeObject(eventObj);
-                    var content = new StringContent(json, Encoding.UTF8, "application/json");
-                    response = client.PutAsync("events/" + id, content).Result;
-                }
-
-                if (response.IsSuccessStatusCode)
-                {
-                    lblMessage.Text = "Event saved successfully!";
-                    lblMessage.ForeColor = System.Drawing.Color.Green;
-                    ClearForm();
-                    LoadEvents();
-                }
-                else
-                {
-                    string errorDetails = response.Content.ReadAsStringAsync().Result;
-                    lblMessage.Text = $"Error: {response.StatusCode} - {response.ReasonPhrase}. Details: {errorDetails}";
-                    lblMessage.ForeColor = System.Drawing.Color.Red;
-                }
+                ShowAlert("Error: " + ex.Message, false);
             }
         }
 
-        protected void gvEvents_RowCommand(object sender, GridViewCommandEventArgs e)
+        protected async void gvEvents_RowCommand(object sender, GridViewCommandEventArgs e)
         {
             int eventId = Convert.ToInt32(e.CommandArgument);
 
             if (e.CommandName == "EditEvent")
             {
-                using (var client = new HttpClient())
-                {
-                    client.BaseAddress = new Uri(apiBaseUrl);
-                    HttpResponseMessage response = client.GetAsync("events/" + eventId).Result;
+                await PopulateFormForEditAsync(eventId);
+            }
+            else if (e.CommandName == "DeleteEvent")
+            {
+                await DeleteEventAsync(eventId);
+            }
+        }
 
+        private async Task PopulateFormForEditAsync(int eventId)
+        {
+            try
+            {
+                using (HttpClient client = new HttpClient())
+                {
+                    HttpResponseMessage response = await client.GetAsync($"{apiBaseUrl}/{eventId}");
                     if (response.IsSuccessStatusCode)
                     {
-                        string json = response.Content.ReadAsStringAsync().Result;
-                        var ev = JsonConvert.DeserializeObject<EventModel>(json);
+                        string jsonString = await response.Content.ReadAsStringAsync();
+                        var selectedEvent = JsonConvert.DeserializeObject<EventViewModel>(jsonString);
 
-                        if (ev != null)
+                        if (selectedEvent != null)
                         {
-                            hfEventID.Value = ev.EventID.ToString();
-                            txtEventName.Text = ev.EventName;
-                            txtDate.Text = ev.EventDate.ToString("yyyy-MM-ddTHH:mm");
-                            txtLocation.Text = ev.Location;
-                            txtDescription.Text = ev.Category;
+                            hfEventID.Value = selectedEvent.EventID.ToString();
+                            txtEventName.Text = selectedEvent.EventName;
+                            txtLocation.Text = selectedEvent.Location;
+                            txtOrganizerName.Text = selectedEvent.OrganizerName;
+                            txtDescription.Text = selectedEvent.Category;
+                            hfExistingImageURL.Value = selectedEvent.ImageURL;
 
-                        
-                            var existingImageField = (HiddenField)FindControl("hfExistingImageURL");
-                            if (existingImageField != null)
+                            if (selectedEvent.EventDate.HasValue)
                             {
-                                existingImageField.Value = ev.ImageURL;
+                                txtDate.Text = selectedEvent.EventDate.Value.ToString("yyyy-MM-ddTHH:mm");
                             }
 
                             btnSave.Text = "Update Event";
@@ -216,20 +214,33 @@ namespace KMC_Client
                     }
                 }
             }
-            else if (e.CommandName == "DeleteEvent")
+            catch (Exception ex)
             {
-                using (var client = new HttpClient())
-                {
-                    client.BaseAddress = new Uri(apiBaseUrl);
-                    HttpResponseMessage response = client.DeleteAsync("events/" + eventId).Result;
+                ShowAlert("Error fetching details: " + ex.Message, false);
+            }
+        }
 
+        private async Task DeleteEventAsync(int eventId)
+        {
+            try
+            {
+                using (HttpClient client = new HttpClient())
+                {
+                    HttpResponseMessage response = await client.DeleteAsync($"{apiBaseUrl}/{eventId}");
                     if (response.IsSuccessStatusCode)
                     {
-                        lblMessage.Text = "Event deleted successfully!";
-                        lblMessage.ForeColor = System.Drawing.Color.Green;
-                        LoadEvents();
+                        ShowAlert("Event deleted successfully! 🗑️", true);
+                        await LoadEventsAsync();
+                    }
+                    else
+                    {
+                        ShowAlert("Failed to delete event.", false);
                     }
                 }
+            }
+            catch (Exception ex)
+            {
+                ShowAlert("Error deleting event: " + ex.Message, false);
             }
         }
 
@@ -241,30 +252,45 @@ namespace KMC_Client
         private void ClearForm()
         {
             hfEventID.Value = "";
+            hfExistingImageURL.Value = "";
+            hfOrganizerEmail.Value = "";
+            hfOrganizerPassword.Value = "";
             txtEventName.Text = "";
             txtDate.Text = "";
             txtLocation.Text = "";
+            txtOrganizerName.Text = "";
             txtDescription.Text = "";
             btnSave.Text = "Save Event";
             lblMessage.Text = "";
+            lblMessage.CssClass = "alert-message";
+        }
 
-            var existingImageField = (HiddenField)FindControl("hfExistingImageURL");
-            if (existingImageField != null)
+        private void ShowAlert(string message, bool isSuccess)
+        {
+            lblMessage.Text = message;
+            if (isSuccess)
             {
-                existingImageField.Value = "";
+                lblMessage.Style["background-color"] = "#DEF7EC";
+                lblMessage.Style["color"] = "#03543F";
+                lblMessage.Style["border"] = "1px solid #84E1BC";
+            }
+            else
+            {
+                lblMessage.Style["background-color"] = "#FDE8E8";
+                lblMessage.Style["color"] = "#9B1C1C";
+                lblMessage.Style["border"] = "1px solid #F8B4B4";
             }
         }
+    }
 
-        public class EventModel
-        {
-            public int EventID { get; set; }
-            public string EventName { get; set; }
-            public DateTime EventDate { get; set; }
-            public string Location { get; set; }
-            public string Category { get; set; }
-            public string ImageURL { get; set; }
-            public string OrganizerName { get; set; }
-            public int EventsDate { get; internal set; }
-        }
+    public class EventViewModel
+    {
+        public int EventID { get; set; }
+        public string EventName { get; set; }
+        public DateTime? EventDate { get; set; }
+        public string Location { get; set; }
+        public string OrganizerName { get; set; }
+        public string Category { get; set; }
+        public string ImageURL { get; set; }
     }
 }
